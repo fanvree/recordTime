@@ -1,3 +1,4 @@
+# recordTime
 # 如何 Docker 化 Python Django 应用程序（[原文](https://zhuanlan.zhihu.com/p/44423066)）
 
 \---
@@ -50,21 +51,29 @@ sudo add-apt-repository \
 
 更新仓库并安装 docker-ce。
 
-``` sudo apt update sudo apt install -y docker-ce```
+``` 
+sudo apt update sudo apt install -y docker-ce
+```
 
 安装完成后，启动 docker 服务并使其能够在每次系统引导时启动。
 
-``` systemctl start docker systemctl enable docker```
+``` 
+systemctl start docker systemctl enable docker
+```
 
 接着，我们将添加一个名为 omar 的新用户并将其添加到 docker 组。
 
-``` useradd -m -s /bin/bash omar usermod -a -G docker omar```
+``` 
+useradd -m -s /bin/bash omar usermod -a -G docker omar
+```
 
 ![启动 Docker](https://pic3.zhimg.com/v2-3a71b74b97e827d55083cd251fdfca16_r.jpg)
 
 以 omar 用户身份登录并运行 docker 命令，如下所示。
 
-``` su - omar docker run hello-world```
+``` 
+su - omar docker run hello-world
+```
 
 确保你能从 Docker 获得 hello-world 消息。
 
@@ -80,11 +89,15 @@ Docker-ce 安装已经完成。
 
 运行以下命令：
 
-``` sudo curl -L https://github.com/docker/compose/releases/download/1.21.0/docker-compose-$(uname -s)-$(uname -m) -o /usr/local/bin/docker-compose sudo chmod +x /usr/local/bin/docker-compose```
+``` 
+sudo curl -L https://github.com/docker/compose/releases/download/1.21.0/docker-compose-$(uname -s)-$(uname -m) -o /usr/local/bin/docker-compose sudo chmod +x /usr/local/bin/docker-compose
+```
 
 现在检查 docker-compose 版本。
 
-``` docker-compose version```
+``` 
+docker-compose version
+```
 
 确保你安装的是最新版本的 docker-compose 1.21。
 
@@ -98,15 +111,21 @@ Docker-ce 安装已经完成。
 
 登录到 omar 用户。
 
-``` su - omar```
+``` 
+su - omar
+```
 
 创建一个新目录 guide01，并进入目录。
 
-``` mkdir -p guide01 cd guide01/```
+``` 
+mkdir -p guide01 cd guide01/
+```
 
 现在在 guide01 目录下，创建两个新目录 project 和 config。
 
-``` mkdir project/ config/```
+``` 
+mkdir project/ config/
+```
 
 注意：
 
@@ -118,11 +137,17 @@ Docker-ce 安装已经完成。
 
 接下来，使用 vim 命令在 config 目录中创建一个新的 requirements.txt 文件。
 
-``` vim config/requirements.txt```
+``` 
+vim config/requirements.txt
+```
 
 粘贴下面的配置：
 
-``` Django==2.0.4 gunicorn==19.7.0 psycopg2==2.7.4```
+``` 
+Django==2.0.4 
+gunicorn==19.7.0 
+psycopg2==2.7.4
+```
 
 保存并退出。
 
@@ -130,11 +155,32 @@ Docker-ce 安装已经完成。
 
 在 config 目录下创建 nginx 配置目录并添加虚拟主机配置文件 django.conf。
 
-``` mkdir -p config/nginx/ vim config/nginx/django.conf```
+``` 
+mkdir -p config/nginx/ vim config/nginx/django.conf
+```
 
 粘贴下面的配置：
 
-``` upstream web { ip_hash; server web:8000; } # portal server { location / { proxy_pass http://web/; } listen 8000; server_name localhost; location /static { autoindex on; alias /src/static/; } }```
+``` 
+upstream web {
+  ip_hash;
+  server web:8000;
+}
+ 
+# portal
+server {
+  location / {
+        proxy_pass http://web/;
+  }
+  listen 8000;
+  server_name localhost;
+ 
+  location /static {    
+    autoindex on;    
+    alias /src/static/;    
+  }
+}
+```
 
 保存并退出。
 
@@ -148,7 +194,20 @@ Docker-ce 安装已经完成。
 
 现在粘贴下面的 Dockerfile 脚本：
 
-``` FROM python:3.5-alpine ENV PYTHONUNBUFFERED 1 RUN apk update && \ apk add --virtual build-deps gcc python-dev musl-dev && \ apk add postgresql-dev bash RUN mkdir /config ADD /config/requirements.txt /config/ RUN pip install -r /config/requirements.txt RUN mkdir /src WORKDIR /src```
+``` 
+FROM python:3.8-alpine
+ENV PYTHONUNBUFFERED 1  
+
+RUN apk update && \
+    apk add --virtual build-deps gcc python-dev musl-dev && \
+    apk add postgresql-dev bash
+
+RUN mkdir /config  
+ADD /config/requirements.txt /config/  
+RUN pip install -r /config/requirements.txt
+RUN mkdir /src
+WORKDIR /src
+```
 
 保存并退出。
 
@@ -160,11 +219,40 @@ Docker-ce 安装已经完成。
 
 使用 [vim](https://www.howtoforge.com/vim-basics) 命令在 guide01 目录下创建 docker-compose.yml 文件。
 
-``` vim docker-compose.yml```
+``` 
+vim docker-compose.yml
+```
 
 粘贴以下配置内容：
 
-``` version: '3' services: db: image: postgres:10.3-alpine container_name: postgres01 nginx: image: nginx:1.13-alpine container_name: nginx01 ports: - "8000:8000" volumes: - ./project:/src - ./config/nginx:/etc/nginx/conf.d depends_on: - web web: build: . container_name: django01 command: bash -c "python manage.py makemigrations && python manage.py migrate && python manage.py collectstatic --noinput && gunicorn hello_django.wsgi -b 0.0.0.0:8000" depends_on: - db volumes: - ./project:/src expose: - "8000" restart: always```
+``` 
+version: '3'
+services:
+  db:
+    image: postgres:10.3-alpine
+    container_name: postgres01
+  nginx:
+    image: nginx:1.13-alpine
+    container_name: nginx01
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./project:/src
+      - ./config/nginx:/etc/nginx/conf.d
+    depends_on:
+      - web
+  web:
+    build: .
+    container_name: django01
+    command: bash -c "python manage.py makemigrations && python manage.py migrate && python manage.py collectstatic --noinput && gunicorn hello_django.wsgi -b 0.0.0.0:8000"
+    depends_on:
+      - db
+    volumes:
+      - ./project:/src
+    expose:
+      - "8000"
+    restart: always
+```
 
 保存并退出。
 
@@ -178,11 +266,17 @@ Docker-ce 安装已经完成。
 
 将 Django 项目文件复制到 project 目录。
 
-``` cd ~/django cp -r * ~/guide01/project/```
+``` 
+cd ~/django 
+cp -r * ~/guide01/project/
+```
 
 进入 project 目录并编辑应用程序设置 settings.py。
 
-``` cd ~/guide01/project/ vim hello_django/settings.py```
+``` 
+cd ~/guide01/project/ 
+vim hello_django/settings.py
+```
 
 注意：
 
@@ -190,11 +284,23 @@ Docker-ce 安装已经完成。
 
 在 ALLOW_HOSTS 行中，添加服务名称 web。
 
-``` ALLOW_HOSTS = ['web']```
+``` 
+ALLOW_HOSTS = ['web']
+```
 
 现在更改数据库设置，我们将使用 PostgreSQL 数据库来运行名为 db 的服务，使用默认用户和密码。
 
-``` DATABASES = { 'default': { 'ENGINE': 'django.db.backends.postgresql_psycopg2', 'NAME': 'postgres', 'USER': 'postgres', 'HOST': 'db', 'PORT': 5432, } }```
+``` 
+DATABASES = {  
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': 'postgres',
+        'USER': 'postgres',
+        'HOST': 'db',
+        'PORT': 5432,
+    }
+}
+```
 
 至于 STATIC_ROOT 配置目录，将此行添加到文件行的末尾。
 
@@ -212,17 +318,23 @@ Docker-ce 安装已经完成。
 
 进入 guide01 目录。
 
-``` cd ~/guide01/```
+``` 
+cd ~/guide01/
+```
 
 现在使用 docker-compose 命令构建 docker 镜像。
 
-``` docker-compose build```
+``` 
+docker-compose build
+```
 
 ![运行 docker 镜像](https://pic4.zhimg.com/v2-ae816646fe38eaedf959a9b865d9ea8f_r.jpg)
 
 启动 docker-compose 脚本中的所有服务。
 
-``` docker-compose up -d```
+``` 
+docker-compose up -d
+```
 
 等待几分钟让 Docker 构建我们的 Python 镜像并下载 nginx 和 postgresql docker 镜像。
 
@@ -248,7 +360,9 @@ Docker-ce 安装已经完成。
 
 接下来，通过在 URL 上添加 /admin 路径来测试管理页面。
 
-``` http://ovh01:8000/admin/```
+``` 
+http://ovh01:8000/admin/
+```
 
 然后你将会看到 Django 管理登录页面。
 
