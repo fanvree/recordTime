@@ -86,7 +86,7 @@ export default {
   },
   mounted() {
     this.axios
-      .get('http://127.0.0.1:8000/article/article-list/?secret_key=record')
+      .get('http://work.itsinghua.top:8000/article/article-list/?secret_key=record')
       .then(response => 
         {
           this.info = []
@@ -104,7 +104,7 @@ export default {
   methods: {
     posting(){
     this.axios
-      .get('http://127.0.0.1:8000/article/article-create/', {
+      .get('http://work.itsinghua.top/article/article-create/', {
         params: {
           'secret_key': 'record',
           content: this.content
