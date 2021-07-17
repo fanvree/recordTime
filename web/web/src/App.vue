@@ -86,7 +86,7 @@ export default {
   },
   mounted() {
     this.axios
-      .get('http://api.itsinghua.top/article/article-list/?secret_key=record')
+      .get('https://api.itsinghua.top/article/article-list/?secret_key=record')
       .then(response => 
         {
           this.info = []
