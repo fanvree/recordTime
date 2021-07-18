@@ -86,7 +86,12 @@ export default {
   },
   mounted() {
     this.axios
-      .get('https://api.itsinghua.top/article/article-list/?secret_key=record')
+      .get('https://api.itsinghua.top/article/article-list/', {
+        params: {
+          owner: this.$route.path.substr(1),
+          secret_key: 'record',
+        }
+      })
       .then(response => 
         {
           this.info = []
@@ -106,8 +111,9 @@ export default {
     this.axios
       .get('https://api.itsinghua.top/article/article-create/', {
         params: {
-          'secret_key': 'record',
-          content: this.content
+          secret_key: 'record',
+          content: this.content,
+          owner: this.$route.path.substr(1),
         }
       })
       .then(() => 
