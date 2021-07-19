@@ -11,10 +11,9 @@
       </a-menu>
     </a-layout-header>
     <a-layout-content style="padding: 0 50px">
-      <a-breadcrumb style="margin: 16px 0">
-        <a-breadcrumb-item>新建日志</a-breadcrumb-item>
-      </a-breadcrumb>
-      
+        <a-breadcrumb style="margin: 16px 0">
+          <a-breadcrumb-item>新建日志</a-breadcrumb-item>
+        </a-breadcrumb>
       <div :style="{ background: '#fff', padding: '24px'}">内容</div>
       <div :style="{ background: '#fff', padding: '0px 24px 24px 24px'}">
       <a-textarea
@@ -22,9 +21,20 @@
         :auto-size="{ minRows: 2, maxRows: 6 }"
         v-model="content"
       />
-      <a-button type="primary" :style="{margin: '10px 0px 0px 0px'}" @click="posting">
-       提交
-      </a-button>
+          <!-- <a-switch checked-children="定时通知" un-checked-children="关闭通知" default-checked/> -->
+      <a-row type="flex" justify="space-around" align="middle">
+        <a-col :span="12">
+          <a-button type="primary" :style="{margin: '10px 0px 0px 0px'}" @click="posting">
+          提交
+          </a-button>
+        </a-col>
+        <a-col :span="12" style="text-align:right">
+          <div style="font-size: 30px">
+          <a-switch checked-children="定时通知" un-checked-children="关闭通知" default-checked
+          @change="onClickSwitch"/>
+          </div>
+        </a-col>
+      </a-row>
       </div>
     </a-layout-content>
     
@@ -82,7 +92,7 @@ export default {
       } else {
         console.error('浏览器不支持Notification');
       }
-      setInterval(this.popNotice, 1000*60*10)
+      this.timer = setInterval(this.popNotice, 1000*60*10)
   },
   mounted() {
     this.axios
@@ -107,6 +117,13 @@ export default {
       )
   },
   methods: {
+    onClickSwitch(checked) {
+      if (checked) {
+      this.timer = setInterval(this.popNotice, 1000*60*10)
+      } else {
+      clearInterval(this.timer)
+      }
+    },
     posting(){
     this.axios
       .get('https://api.itsinghua.top/article/article-create/', {
