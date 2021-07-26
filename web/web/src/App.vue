@@ -7,10 +7,14 @@
         :defaultSelectedKeys="['1']"
         :style="{ lineHeight: '64px' }"
       >
-        <a-menu-item key="1">nav 1</a-menu-item>
+        <a-menu-item key="1" @click="ChooseMenu = 1">时间轴</a-menu-item>
+        <a-menu-item key="2" @click="ChooseMenu = 2">日历</a-menu-item>
       </a-menu>
     </a-layout-header>
-    <a-layout-content style="padding: 0 50px">
+
+
+    <!-- 对话框 -->
+    <a-layout-content style="padding: 0 50px" v-if="ChooseMenu == 1">
         <a-breadcrumb style="margin: 16px 0">
           <a-breadcrumb-item>新建日志</a-breadcrumb-item>
         </a-breadcrumb>
@@ -28,7 +32,21 @@
           提交
           </a-button>
         </a-col>
-        <a-col :span="12" style="text-align:right">
+        <!-- <a-col :span="8">
+          <a-button type="primary" :style="{margin: '10px 0px 0px 0px'}" @click="posting">
+          提交
+          </a-button>
+        </a-col> -->
+        <a-col :span="6" style="text-align:right">
+          <div :style="{margin: '10px 0px 0px 0px'}">
+            每隔
+          <a-input-number id="inputNumber" v-model="value" :min="1" :max="100000" @change="onChange" :disabled="!onNotice" @pressEnter="inputBlur" @blur="sendTips"/>
+          分钟通知
+          </div>
+        </a-col>
+        <a-col :span="6" style="text-align:right">
+          <!-- <div> -->
+
           <div style="font-size: 30px">
           <a-switch checked-children="定时通知" un-checked-children="关闭通知" default-checked
           @change="onClickSwitch"/>
@@ -37,7 +55,39 @@
       </a-row>
       </div>
     </a-layout-content>
-    
+
+
+  <!-- 日历 -->
+    <a-layout-content style="padding: 0 50px" v-if="ChooseMenu == 2">
+      <a-breadcrumb style="margin: 16px 0">
+        <a-breadcrumb-item>日历</a-breadcrumb-item>
+      </a-breadcrumb>
+      <div :style="{ background: '#fff', padding: '24px 24px 24px 24px'}">
+            <div
+      :style="{
+        display: 'inline-block',
+        border: '1px solid #d9d9d9',
+        borderRadius: '4px',
+      }"
+    >
+        <a-calendar>
+          <ul slot="dateCellRender" slot-scope="value" class="events">
+            <li v-for="item in getListData(value)" :key="item.content">
+              <a-badge :status="item.type" :text="item.content" />
+            </li>
+          </ul>
+          <template slot="monthCellRender" slot-scope="value">
+            <div v-if="getMonthData(value)" class="notes-month">
+              <section>{{ getMonthData(value) }}</section>
+              <span>Backlog number</span>
+            </div>
+          </template>
+        </a-calendar>
+            </div>
+      </div>
+    </a-layout-content>
+
+    <!-- 时间轴 -->
     <a-layout-content style="padding: 0 50px">
       <a-breadcrumb style="margin: 16px 0">
         <a-breadcrumb-item>历史日志</a-breadcrumb-item>
@@ -50,8 +100,10 @@
           <a-timeline-item>{{info}}</a-timeline-item>
         </a-timeline> -->
         <a-timeline v-if="showTimeLine">
-        <a-timeline-item v-for="(item, index) in info" :key="index">
-          {{item.time}}{{"  " + item.content}}
+        <a-timeline-item v-for="(item, index) in info" :key="index" @click="clickTimeLineItem(item)" postion = "left">
+          <!-- {{item.time}}{{"  " + item.content}} -->
+          {{item.time + " "}}<span v-html="item.content"></span>
+          <div :style="{height: item.timeHeight + 'px'}"></div>
         </a-timeline-item>
         </a-timeline>
       </div>
@@ -59,6 +111,18 @@
     <a-layout-footer style="text-align: center">
       Record ©2021 Created by Fzr
     </a-layout-footer>
+
+
+    <!-- <a-drawer
+      title="Basic Drawer"
+      placement="bottom"
+      closable="false"
+      :visible="showDrawer"
+    >
+      <p>Some contents...</p>
+      <p>Some contents...</p>
+      <p>Some contents...</p>
+    </a-drawer> -->
   </a-layout>
 </template>
 <style>
@@ -78,6 +142,10 @@ export default {
       info: [],
       showTimeLine: true,
       timer: '',
+      value: 10,
+      onNotice: true,
+      ChooseMenu: 1, 
+      showDrawer: true,
     }
   },
   created() {
@@ -105,11 +173,30 @@ export default {
       .then(response => 
         {
           this.info = []
+          let lasttime = 0
           response.data.forEach(element => {
+
+            if (!this.sameDay(element.fields.createdTime, lasttime)) {
+              this.info.unshift({
+                position: 'left',
+                content: '',
+                contentbr: '',
+                timeHeight: 0,
+                time: this.timeStamp(lasttime),
+                createdTime: element.fields.createdTime
+              })
+            }
+
             this.info.unshift({
+              position: 'right',
               content: element.fields.content,
-              time: this.timeStamp(element.fields.createdTime)
+              contentbr: element.fields.content.replace(/\n/g,"<br/>"),
+              timeHeight: this.getTimeHeight(element.fields.createdTime, lasttime),
+              time: this.timeStamp(element.fields.createdTime),
+              createdTime: element.fields.createdTime
             })
+            console.log(this.getTimeHeight(element.fields.createdTime, lasttime))
+            lasttime = element.fields.createdTime
           });
           this.$forceUpdate()
           console.log(this.info)
@@ -117,9 +204,54 @@ export default {
       )
   },
   methods: {
+    sameDay(time1, time2) {
+      return (new Date(time1 * 1000).toDateString() === new Date(time2 * 1000).toDateString())
+    },
+    getTimeHeight(time1, time2) {
+      if (new Date(time1 * 1000).toDateString() === new Date(time2 * 1000).toDateString()) {
+        return 0
+      }
+      // let timeDis = time1 - time2
+      // if (timeDis  < 60 * 15) {
+      //   return 0
+      // }
+      // if (timeDis  < 60 * 60) {
+      //   return 10
+      // }
+      // if (timeDis  < 60 * 60 * 24) {
+      //   return 20
+      // }
+      return 30
+    },
+    clickTimeLineItem(item) {
+      let temp = item.content
+      item.content = item.contentbr
+      item.contentbr = temp
+    },
+    onChange(value) {
+      clearInterval(this.timer)
+      console.log(value)
+      // this.value = value
+      this.timer = setInterval(this.popNotice, 1000*60*this.value)
+      // this.$message.success(
+      //   String(value) + "分钟后发送通知",
+      //   3,
+      // );
+    }, 
+    inputBlur() {
+      var input = document.getElementById("inputNumber");
+      input.blur()
+    },
+    sendTips() {
+      this.$message.success(
+        String(this.value) + "分钟后发送通知",
+        3,
+      );
+    },
     onClickSwitch(checked) {
+      this.onNotice = checked
       if (checked) {
-      this.timer = setInterval(this.popNotice, 1000*60*10)
+      this.timer = setInterval(this.popNotice, 1000*60*this.value)
       } else {
       clearInterval(this.timer)
       }
@@ -162,6 +294,79 @@ export default {
           };
         }
       },
+
+
+ getListData(value) {
+      console.log(value.toDate())
+      // return 0
+      let listData = []
+      let count = 0
+      this.info.forEach(element => {
+            console.log(Date.parse(value.toDate()))
+            if (this.sameDay(Date.parse(value.toDate())/1000, element.createdTime)) {
+              // listData.push({
+              //   content: element.content,
+              //   type: 'success'
+              // })
+              count ++
+              // this.info.unshift({
+              //   position: 'left',
+              //   content: '',
+              //   contentbr: '',
+              //   timeHeight: 0,
+              //   time: this.timeStamp(lasttime)
+              // })
+            }
+      })
+      if (count > 0)
+      listData.push({
+                content: '共' + String(count) + "条日志",
+                type: 'success'
+              })
+      return listData || []
+      // return [
+      //       { type: 'warning', content: value.date() },
+      //       { type: 'success', content: value.date() },
+      //     ];
+      // let listData;
+      // switch (value.date()) {
+      //   case 8:
+      //     listData = [
+      //       { type: 'warning', content: 'This is warning event.' },
+      //       { type: 'success', content: 'This is usual event.' },
+      //     ];
+      //     break;
+      //   case 10:
+      //     listData = [
+      //       { type: 'warning', content: 'This is warning event.' },
+      //       { type: 'success', content: 'This is usual event.' },
+      //       { type: 'error', content: 'This is error event.' },
+      //     ];
+      //     break;
+      //   case 15:
+      //     listData = [
+      //       { type: 'warning', content: 'This is warning event' },
+      //       { type: 'success', content: 'This is very long usual eventddddddddddddddddd' },
+      //       { type: 'error', content: 'This is error event 1.' },
+      //       { type: 'error', content: 'This is error event 2.' },
+      //       { type: 'error', content: 'This is error event 3.' },
+      //       { type: 'error', content: 'This is error event 4.' },
+      //     ];
+      //     break;
+      //   default:
+      // }
+      // return listData || [];
+    },
+
+    getMonthData(value) {
+      if (value.month() === 8) {
+        return 1394;
+      }
+      return null
+    },
+
+
+
 
 
 timeStamp(data) {
