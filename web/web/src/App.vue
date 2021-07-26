@@ -320,7 +320,7 @@ export default {
       })
       if (count > 0)
       listData.push({
-                content: '共' + String(count) + "条日志",
+                content: '共' + String(count - 1) + "条日志",
                 type: 'success'
               })
       return listData || []
