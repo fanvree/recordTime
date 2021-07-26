@@ -77,10 +77,12 @@
             </li>
           </ul>
           <template slot="monthCellRender" slot-scope="value">
-            <div v-if="getMonthData(value)" class="notes-month">
+            <!-- <div v-if="getMonthData(value)" class="notes-month">
               <section>{{ getMonthData(value) }}</section>
-              <span>Backlog number</span>
-            </div>
+            </div> -->
+            <li v-for="item in getMonthData(value)" :key="item.content">
+              <a-badge :status="item.type" :text="item.content" />
+            </li>
           </template>
         </a-calendar>
             </div>
@@ -207,6 +209,9 @@ export default {
     sameDay(time1, time2) {
       return (new Date(time1 * 1000).toDateString() === new Date(time2 * 1000).toDateString())
     },
+    sameMonth(time1, time2) {
+      return (new Date(time1 * 1000).getMonth() === new Date(time2 * 1000).getMonth())
+    },
     getTimeHeight(time1, time2) {
       if (new Date(time1 * 1000).toDateString() === new Date(time2 * 1000).toDateString()) {
         return 0
@@ -297,12 +302,10 @@ export default {
 
 
  getListData(value) {
-      console.log(value.toDate())
       // return 0
       let listData = []
       let count = 0
       this.info.forEach(element => {
-            console.log(Date.parse(value.toDate()))
             if (this.sameDay(Date.parse(value.toDate())/1000, element.createdTime)) {
               // listData.push({
               //   content: element.content,
@@ -359,10 +362,19 @@ export default {
     },
 
     getMonthData(value) {
-      if (value.month() === 8) {
-        return 1394;
-      }
-      return null
+      let listData = []
+      let count = 0
+      this.info.forEach(element => {
+            if (this.sameMonth(Date.parse(value.toDate())/1000, element.createdTime)) {
+              count ++
+            }
+      })
+      if (count > 0)
+      listData.push({
+                content: '共' + String(count - 1) + "条日志",
+                type: 'success'
+              })
+      return listData || []
     },
 
 
