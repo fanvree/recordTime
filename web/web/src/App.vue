@@ -44,7 +44,7 @@
           分钟通知
           </div>
         </a-col>
-        <a-col :span="6" style="text-align:right" :xs="12" :sm="12">
+        <a-col :span="isMobile?12:6" style="text-align:right">
           <!-- <div> -->
 
           <div style="font-size: 30px">
