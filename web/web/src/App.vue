@@ -72,17 +72,17 @@
     >
         <a-calendar>
           <ul slot="dateCellRender" slot-scope="value" class="events">
-            <li v-for="item in getListData(value)" :key="item.content">
+            <div v-for="item in getListData(value)" :key="item.content">
               <a-badge :status="item.type" :text="item.content" />
-            </li>
+            </div>
           </ul>
           <template slot="monthCellRender" slot-scope="value">
             <!-- <div v-if="getMonthData(value)" class="notes-month">
               <section>{{ getMonthData(value) }}</section>
             </div> -->
-            <li v-for="item in getMonthData(value)" :key="item.content">
+            <div v-for="item in getMonthData(value)" :key="item.content">
               <a-badge :status="item.type" :text="item.content" />
-            </li>
+            </div>
           </template>
         </a-calendar>
             </div>
