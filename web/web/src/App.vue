@@ -37,7 +37,7 @@
           提交
           </a-button>
         </a-col> -->
-        <a-col :span="6" style="text-align:right">
+        <a-col :span="6" style="text-align:right" v-if="!isMobile">
           <div :style="{margin: '10px 0px 0px 0px'}">
             每隔
           <a-input-number id="inputNumber" v-model="value" :min="1" :max="100000" @change="onChange" :disabled="!onNotice" @pressEnter="inputBlur" @blur="sendTips"/>
@@ -148,6 +148,7 @@ export default {
       onNotice: true,
       ChooseMenu: 1, 
       showDrawer: true,
+      isMobile: false // 屏幕尺寸
     }
   },
   created() {
@@ -163,6 +164,7 @@ export default {
         console.error('浏览器不支持Notification');
       }
       this.timer = setInterval(this.popNotice, 1000*60*10)
+      this.isMobile = this._isMobile()
   },
   mounted() {
     this.axios
@@ -379,6 +381,11 @@ export default {
 
 
 
+//App.vue
+_isMobile() {
+  let flag = navigator.userAgent.match(/(phone|pad|pod|iPhone|iPod|ios|iPad|Android|Mobile|BlackBerry|IEMobile|MQQBrowser|JUC|Fennec|wOSBrowser|BrowserNG|WebOS|Symbian|Windows Phone)/i)
+  return flag;
+},
 
 
 timeStamp(data) {
