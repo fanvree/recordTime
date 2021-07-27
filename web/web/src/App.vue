@@ -102,8 +102,9 @@
           <a-timeline-item>{{info}}</a-timeline-item>
         </a-timeline> -->
         <a-timeline v-if="showTimeLine">
-        <a-timeline-item v-for="(item, index) in info" :key="index" @click="clickTimeLineItem(item)" postion = "left">
+        <a-timeline-item v-for="(item, index) in info" :key="index" @click="clickTimeLineItem(item)" :color="item.position=='left'?'green':'blue'">
           <!-- {{item.time}}{{"  " + item.content}} -->
+          <!-- <a-icon slot="dot" type="clock-circle-o" style="font-size: 16px;"/> -->
           {{item.time + " "}}<span v-html="item.content"></span>
           <div :style="{height: item.timeHeight + 'px'}"></div>
         </a-timeline-item>
@@ -180,7 +181,7 @@ export default {
           let lasttime = 0
           response.data.forEach(element => {
 
-            if (!this.sameDay(element.fields.createdTime, lasttime)) {
+            if (lasttime != 0 && !this.sameDay(element.fields.createdTime, lasttime)) {
               this.info.unshift({
                 position: 'left',
                 content: '',
@@ -205,7 +206,12 @@ export default {
           this.$forceUpdate()
           console.log(this.info)
         }
-      )
+      ).catch(() => {
+        this.$message.error(
+          "网络连接失败或者服务器出错，请稍后再试",
+          10,
+        );
+      })
   },
   methods: {
     sameDay(time1, time2) {
@@ -231,9 +237,10 @@ export default {
       return 30
     },
     clickTimeLineItem(item) {
-      let temp = item.content
+      // let temp = item.content
+      // item.content = item.contentbr
+      // item.contentbr = temp
       item.content = item.contentbr
-      item.contentbr = temp
     },
     onChange(value) {
       clearInterval(this.timer)
@@ -278,7 +285,12 @@ export default {
           // this.info = response;
           this.$router.go(0);
         }
-      )
+      ).catch(() => {
+        this.$message.error(
+          "网络连接失败或者服务器出错",
+          3,
+        );
+      })
     },
  popNotice() {
         let user = '你'
@@ -303,7 +315,7 @@ export default {
       },
 
 
- getListData(value) {
+getListData(value) {
       // return 0
       let listData = []
       let count = 0
@@ -328,6 +340,8 @@ export default {
                 content: '共' + String(count - 1) + "条日志",
                 type: 'success'
               })
+              
+      
       return listData || []
       // return [
       //       { type: 'warning', content: value.date() },
