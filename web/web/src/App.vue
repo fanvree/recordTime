@@ -1,6 +1,6 @@
 <template>
-  <a-layout id="components-layout-demo-top" class="layout">
-    <a-layout-header>
+  <a-layout id="components-layout-demo-top" class="layout" @click="updateLastTime()">
+    <a-layout-header  @click="updateLastTime()">
       <a-menu
         theme="dark"
         mode="horizontal"
@@ -13,8 +13,22 @@
     </a-layout-header>
 
 
+    <a-alert
+      banner
+      closable
+      v-show="missNoticeTime > 3"
+    >
+       <!-- <span slot="message">
+        三次通知后还未填写，暂时不发送通知 -->
+         <!-- <span style="color: red">Success</span> Description Success Description -->
+      <!-- </span> -->
+       <span slot="description">
+        三次通知后还未填写，暂时不发送通知。刷新页面或者提交后重新发送通知
+      </span>
+    </a-alert>
+
     <!-- 对话框 -->
-    <a-layout-content style="padding: 0 50px" v-if="ChooseMenu == 1">
+    <a-layout-content style="padding: 0 50px" v-if="ChooseMenu == 1"  @click="updateLastTime()">
         <a-breadcrumb style="margin: 16px 0">
           <a-breadcrumb-item>新建日志</a-breadcrumb-item>
         </a-breadcrumb>
@@ -43,6 +57,7 @@
           <a-input-number id="inputNumber" v-model="value" :min="1" :max="100000" @change="onChange" :disabled="!onNotice" @pressEnter="inputBlur" @blur="sendTips"/>
           分钟通知
           </div>
+          
         </a-col>
         <a-col :span="isMobile?12:6" style="text-align:right">
           <!-- <div> -->
@@ -58,7 +73,7 @@
 
 
   <!-- 日历 -->
-    <a-layout-content style="padding: 0 50px" v-if="ChooseMenu == 2">
+    <a-layout-content style="padding: 0 50px" v-if="ChooseMenu == 2"  @click="updateLastTime()">
       <a-breadcrumb style="margin: 16px 0">
         <a-breadcrumb-item>日历</a-breadcrumb-item>
       </a-breadcrumb>
@@ -90,7 +105,7 @@
     </a-layout-content>
 
     <!-- 时间轴 -->
-    <a-layout-content style="padding: 0 50px">
+    <a-layout-content style="padding: 0 50px"  @click="updateLastTime()">
       <a-breadcrumb style="margin: 16px 0">
         <a-breadcrumb-item>历史日志</a-breadcrumb-item>
       </a-breadcrumb>
@@ -149,10 +164,15 @@ export default {
       onNotice: true,
       ChooseMenu: 1, 
       showDrawer: true,
-      isMobile: false // 屏幕尺寸
+      isMobile: false, // 屏幕尺寸
+      missNoticeTime: 0,
     }
   },
   created() {
+      this.missNoticeTime = 0
+      if (localStorage.value) {
+        this.value = localStorage.value
+      }
       if (window.Notification) {
         // 浏览器通知--window.Notification
         if (Notification.permission == "granted") {
@@ -164,7 +184,7 @@ export default {
       } else {
         console.error('浏览器不支持Notification');
       }
-      this.timer = setInterval(this.popNotice, 1000*60*10)
+      this.timer = setInterval(this.popNotice, 1000*60*this.value)
       this.isMobile = this._isMobile()
   },
   mounted() {
@@ -214,6 +234,12 @@ export default {
       })
   },
   methods: {
+    // updateLastTime() {
+    //   this.$message.success(
+    //     "活跃",
+    //     3,
+    //   );
+    // }, 
     sameDay(time1, time2) {
       return (new Date(time1 * 1000).toDateString() === new Date(time2 * 1000).toDateString())
     },
@@ -246,6 +272,7 @@ export default {
       clearInterval(this.timer)
       console.log(value)
       // this.value = value
+      localStorage.value = value
       this.timer = setInterval(this.popNotice, 1000*60*this.value)
       // this.$message.success(
       //   String(value) + "分钟后发送通知",
@@ -293,6 +320,11 @@ export default {
       })
     },
  popNotice() {
+        this.missNoticeTime ++;
+        if (this.missNoticeTime > 3) {          
+          this.$forceUpdate()
+          return
+        }
         let user = '你'
         let content = '填写记录'
         let that = this;
