@@ -176,6 +176,7 @@ export default {
       if (window.Notification) {
         // 浏览器通知--window.Notification
         if (Notification.permission == "granted") {
+          this.sendTips()
           console.log("允许通知")
         }else if( Notification.permission != "denied"){
           console.log("需要通知权限")
