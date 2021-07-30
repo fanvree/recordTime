@@ -9,6 +9,15 @@
       >
         <a-menu-item key="1" @click="ChooseMenu = 1">时间轴</a-menu-item>
         <a-menu-item key="2" @click="ChooseMenu = 2">日历</a-menu-item>
+        <a-menu-item key="3">
+           <a
+                    target="_blank"
+                    href="https://vpn.itsinghua.top"
+                    class="text-decoration-none"
+                  >
+          谷歌搜索
+           </a>
+        </a-menu-item>
       </a-menu>
     </a-layout-header>
 
